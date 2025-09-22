@@ -1,0 +1,18 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.pyc
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
