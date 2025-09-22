@@ -1,0 +1,12 @@
+nibabel
+nilearn
+scipy
+scikit-learn
+scikit-image
+opencv-python
+PyQt6
+matplotlib
+plotly
+joblib
+pytest
+sphinx
