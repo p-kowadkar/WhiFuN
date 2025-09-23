@@ -4,7 +4,7 @@ import numpy as np
 
 from pywhifun.utils.io import load_subjects_from_csv, write_list_of_dicts_to_csv, unzip_nifti_if_needed
 from pywhifun.utils.logging import setup_file_logger, log_error_to_file
-from pywhifun.preprocessing.motion import calculate_fd_sum
+from pywhifun.preprocessing.motion import calculate_fd_sum, realign_image_stub
 
 # Configure basic logging for console output
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -25,12 +25,6 @@ def _discard_volumes_stub(func_path, n_vols):
     logging.info("PIPELINE STUB: Skipping volume discarding (n_vol_dis = 0).")
     return func_path
 
-def _realign_stub(func_path):
-    logging.info(f"PIPELINE STUB: Realigning (motion correcting) {func_path}")
-    realigned_path = func_path.replace('.nii', '_realigned.nii')
-    motion_params_path = func_path.replace('.nii', '_motion.txt')
-    logging.info(f"PIPELINE STUB: --> Would create {realigned_path} and {motion_params_path}")
-    return realigned_path, motion_params_path
 
 
 def _segment_stub(anat_path):
@@ -122,12 +116,17 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
             # --- Step 3: Discard Initial Volumes ---
             trimmed_file = _discard_volumes_stub(subject['func_file'], params.get('n_vol_dis', 0))
 
-            # --- Step 4: Realignment ---
-            realigned_file, motion_params_path = _realign_stub(trimmed_file)
+            # --- Step 4: Realignment (STUB IMPLEMENTATION) ---
+            realigned_file, motion_params_path = realign_image_stub(
+                trimmed_file,
+                output_prefix=params.get('Realign_pre', 'r')
+            )
 
             # --- Step 5: Framewise Displacement Check (REAL IMPLEMENTATION) ---
             logging.info("PIPELINE: Calculating FD and checking against thresholds.")
-            motion_params = np.loadtxt(motion_params_path) # In reality, we'd load the file
+            # This will fail until the realignment stub is replaced with a real implementation
+            # that provides a real motion parameter file. For now, we load the dummy file.
+            motion_params = np.loadtxt(motion_params_path)
             fd = calculate_fd_sum(motion_params)
 
             if np.max(fd) > params.get('max_fd', 6):

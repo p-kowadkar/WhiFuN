@@ -1,4 +1,8 @@
+import os
+import shutil
+import logging
 import numpy as np
+import nibabel as nib
 from numpy.typing import ArrayLike
 
 def calculate_fd(motion_params: ArrayLike) -> np.ndarray:
@@ -77,3 +81,54 @@ def calculate_fd_sum(motion_params: ArrayLike, rot_radius: float = 50.0) -> np.n
     fd = np.sum(trans_diff, axis=1) + np.sum(rot_diff * rot_radius, axis=1)
 
     return fd
+
+
+def realign_image_stub(nifti_path: str, output_prefix: str = 'r') -> (str, str):
+    """
+    A placeholder stub for the realignment (motion correction) step.
+
+    WARNING: This function does not perform any actual realignment.
+    It is a placeholder to allow the pipeline to run end-to-end.
+
+    It copies the input file to a new file with the specified prefix and
+    creates a dummy motion parameter file filled with zeros.
+
+    Args:
+        nifti_path (str): The path to the input 4D NIfTI file.
+        output_prefix (str): The prefix to add to the output filename.
+
+    Returns:
+        A tuple containing:
+        - realigned_path (str): Path to the "realigned" (copied) file.
+        - motion_params_path (str): Path to the dummy motion parameter file.
+    """
+    logging.warning("REALIGNMENT STEP IS A STUB. No motion correction is being performed.")
+
+    # Construct output paths
+    dirname, filename = os.path.split(nifti_path)
+    realigned_path = os.path.join(dirname, f"{output_prefix}{filename}")
+
+    # Create the motion parameter filename (e.g., rp_c_sub-01.txt)
+    # This needs to match the naming convention from the MATLAB script
+    base_name = filename.split('.')[0] # e.g., c_sub-01_task-rest_bold
+    motion_params_filename = f"rp_{base_name}.txt"
+    motion_params_path = os.path.join(dirname, motion_params_filename)
+
+    # 1. Copy the original file to the new "realigned" location
+    shutil.copyfile(nifti_path, realigned_path)
+    logging.info(f"STUB: Copied {nifti_path} to {realigned_path}")
+
+    # 2. Create a dummy motion parameter file with zeros
+    # We need to know the number of timepoints. We can load the image for this.
+    try:
+        img = nib.load(nifti_path)
+        n_timepoints = img.shape[3] if len(img.shape) > 3 else 1
+    except Exception:
+        n_timepoints = 180 # A reasonable default if loading fails
+        logging.warning(f"Could not load {nifti_path} to get timepoints. Creating dummy motion file with {n_timepoints} rows.")
+
+    dummy_motion_params = np.zeros((n_timepoints, 6))
+    np.savetxt(motion_params_path, dummy_motion_params, fmt='%.6f')
+    logging.info(f"STUB: Created dummy motion file at {motion_params_path}")
+
+    return realigned_path, motion_params_path

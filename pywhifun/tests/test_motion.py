@@ -45,7 +45,9 @@ def test_calculate_fd_no_motion():
 
 # --- Tests for calculate_fd_sum ---
 
-from pywhifun.preprocessing.motion import calculate_fd_sum
+from pywhifun.preprocessing.motion import calculate_fd_sum, realign_image_stub
+import os
+import nibabel as nib
 
 def test_calculate_fd_sum_basic():
     """Tests the sum-based FD calculation with a simple, known input."""
@@ -69,3 +71,33 @@ def test_calculate_fd_sum_invalid_input():
     """Tests that a ValueError is raised for inputs with incorrect dimensions."""
     with pytest.raises(ValueError, match="shape \\(n_timepoints, 6\\)"):
         calculate_fd_sum(np.zeros((10, 5))) # wrong number of columns
+
+
+# --- Tests for realign_image_stub ---
+
+def test_realign_image_stub(tmp_path):
+    """Tests that the realignment stub correctly creates dummy output files."""
+    # 1. Create a dummy input file in a temporary directory
+    nifti_path = tmp_path / "func.nii.gz"
+
+    # Create a dummy 4D nifti image with 5 timepoints
+    data = np.zeros((10, 10, 10, 5))
+    img = nib.Nifti1Image(data, np.eye(4))
+    nib.save(img, nifti_path)
+
+    # 2. Call the stub function
+    prefix = 'r'
+    realigned_path, motion_path = realign_image_stub(str(nifti_path), output_prefix=prefix)
+
+    # 3. Assert that the outputs were created
+    assert os.path.exists(realigned_path)
+    assert os.path.exists(motion_path)
+
+    # 4. Assert that the realigned file is a copy of the original
+    loaded_realigned = nib.load(realigned_path)
+    assert_allclose(loaded_realigned.get_fdata(), data)
+
+    # 5. Assert that the motion file has the correct shape and is all zeros
+    motion_params = np.loadtxt(motion_path)
+    assert motion_params.shape == (5, 6)
+    assert np.all(motion_params == 0)
