@@ -1,9 +1,39 @@
 import sys
+from PyQt6.QtCore import QThread, QObject, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QGroupBox, QLabel, QLineEdit, QPushButton, QCheckBox, QTextEdit, QFileDialog
 )
 from .subject_details_dialog import SubjectDetailsDialog
+from pywhifun.preprocessing.pipeline import run_preprocessing_pipeline
+
+
+class PipelineWorker(QObject):
+    """
+    A worker object for running the preprocessing pipeline in a separate thread.
+    """
+    finished = pyqtSignal()
+    progress = pyqtSignal(str)
+
+    def __init__(self, params):
+        super().__init__()
+        self.params = params
+
+    def run(self):
+        """Runs the long-running task."""
+        try:
+            self.progress.emit("--- Starting PyWhiFuN Preprocessing Pipeline (STUBBED) ---")
+            # For now, use dummy paths and params from the GUI
+            run_preprocessing_pipeline(
+                output_folder=self.params.get("output_folder", "/tmp/pywhifun_output"),
+                subject_list_csv="Subj_list.csv",
+                params=self.params
+            )
+            self.progress.emit("--- PyWhiFuN Preprocessing Pipeline Finished ---")
+        except Exception as e:
+            self.progress.emit(f"PIPELINE CRITICAL ERROR: {e}")
+        finally:
+            self.finished.emit()
 
 
 class MainWindow(QMainWindow):
@@ -96,7 +126,49 @@ class MainWindow(QMainWindow):
         # Placeholder for opening a parameters dialog
 
     def _run_preprocessing(self):
-        self._log("ACTION: 'Run Preprocessing' clicked.")
+        """
+        Gathers parameters and runs the preprocessing pipeline in a separate thread
+        to avoid freezing the GUI.
+        """
+        self._log("ACTION: 'Run Preprocessing' clicked. Preparing to start pipeline...")
+        self.run_preprocessing_button.setEnabled(False)
+
+        # For now, create some dummy parameters to pass to the stubbed pipeline
+        # In the future, these will be read from dedicated parameter dialogs
+        params = {
+            'n_vol_dis': 10,
+            'Reg_': 1,
+            'filter_check': 0,
+            'Smooth_': 1
+        }
+        params['output_folder'] = self.output_path_edit.text()
+        if not params['output_folder']:
+            self._log("ERROR: Output folder cannot be empty.")
+            self.run_preprocessing_button.setEnabled(True)
+            return
+
+        # Create a QThread and a worker
+        self.thread = QThread()
+        self.worker = PipelineWorker(params)
+        self.worker.moveToThread(self.thread)
+
+        # Connect signals and slots
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.progress.connect(self._log) # Log progress from the pipeline to the GUI
+
+        # Re-enable button when the thread is finished
+        self.thread.finished.connect(
+            lambda: self.run_preprocessing_button.setEnabled(True)
+        )
+        self.thread.finished.connect(
+            lambda: self._log("Pipeline thread has finished.")
+        )
+
+        # Start the thread
+        self.thread.start()
 
     def _on_exclude_subjects_toggled(self, checked):
         self._log(f"EVENT: 'Manually exclude subjects' checkbox toggled to {checked}.")
