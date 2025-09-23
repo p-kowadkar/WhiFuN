@@ -5,6 +5,7 @@ import numpy as np
 from pywhifun.utils.io import load_subjects_from_csv, write_list_of_dicts_to_csv, unzip_nifti_if_needed
 from pywhifun.utils.logging import setup_file_logger, log_error_to_file
 from pywhifun.preprocessing.motion import calculate_fd_sum, realign_image_stub
+from pywhifun.preprocessing.segmentation import segment_image_stub
 
 # Configure basic logging for console output
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -27,9 +28,6 @@ def _discard_volumes_stub(func_path, n_vols):
 
 
 
-def _segment_stub(anat_path):
-    logging.info(f"PIPELINE STUB: Segmenting {anat_path} into tissue types.")
-    return "/path/to/c1anat.nii", "/path/to/c2anat.nii"
 
 def _skullstrip_stub(anat_path, segmentation_files):
     logging.info(f"PIPELINE STUB: Skull-stripping {anat_path}")
@@ -135,9 +133,10 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
                 continue
             # (Add other FD checks here: mean_fd, etc.)
 
-            # --- Step 6: Segmentation ---
-            c1_file, c2_file = _segment_stub(subject['anat_file'])
-
+            # --- Step 6: Segmentation (STUB IMPLEMENTATION) ---
+            segmentation_files = segment_image_stub(subject['anat_file'])
+            c1_file = segmentation_files['gm']
+            c2_file = segmentation_files['wm']
 
             # --- Step 7: Skull Stripping ---
             skullstripped_anat = _skullstrip_stub(subject['anat_file'], [c1_file, c2_file])

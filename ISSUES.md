@@ -36,3 +36,34 @@ To allow the rest of the pipeline conversion to proceed, I have implemented a **
 This allows the downstream pipeline steps (like FD calculation) to run without crashing, but **no actual motion correction is being performed.**
 
 **Requested Action:** Please review the potential solutions and advise on the preferred long-term strategy for this function. For now, I will proceed with the placeholder stub.
+
+---
+
+## 2. Anatomical Tissue Segmentation
+
+- **Date**: 2025-09-23
+- **MATLAB Function**: `whifun_segment.m`
+- **Core Dependency**: SPM12 (`spm.spatial.preproc`)
+
+### Description
+The `whifun_segment.m` function is a wrapper for SPM12's powerful unified segmentation routine. This single command performs bias correction, segments the brain into 6 tissue classes (saving GM, WM, and CSF probability maps), and calculates the deformation fields for normalizing the image to MNI space.
+
+### The Block
+Similar to the realignment issue, there is **no direct, pure-Python equivalent for SPM's segmentation algorithm within the `nilearn` library**. The user's project notes suggested `nilearn.image.clean_img`, but this function is for fMRI time-series denoising, not anatomical tissue segmentation.
+
+Standard Python neuroimaging pipelines (`fMRIPrep`, `CPAC`) achieve this by using wrappers around external tools like SPM, FSL (`FAST`), or ANTs. A pure-Python implementation would require a dedicated, advanced library for this specific task, which is not part of the current dependency list.
+
+### Potential Solutions (Requiring User Decision)
+
+1.  **Use `nipype` Wrapper**: Call SPM's segmentation via `nipype`. This would provide perfect functional equivalence.
+    -   **Con**: Requires a full SPM12 installation in the execution environment.
+
+2.  **Use a dedicated Python library**: Libraries like `ANTsPy` offer advanced registration and segmentation tools, but they are heavy dependencies and their results would differ from SPM's, requiring a full re-validation of the pipeline.
+
+### Proposed Temporary Solution (Implemented)
+
+To allow pipeline development to continue, I have implemented a **placeholder stub** for the `segment_image` function. This stub:
+- Logs a prominent `WARNING` that segmentation is not being performed.
+- Creates dummy output files that are expected by downstream steps. This includes empty NIfTI files for the tissue maps (`c1*`, `c2*`, `c3*`) and the deformation field (`y_*`).
+
+**Requested Action:** Please advise on the preferred long-term strategy for tissue segmentation. I will proceed with the placeholder stub for now.
