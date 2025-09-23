@@ -6,9 +6,9 @@ This document tracks the conversion status of all functions called by the main `
 
 | MATLAB Function                      | Purpose                                       | Python Equivalent / Status                 |
 | ------------------------------------ | --------------------------------------------- | ------------------------------------------ |
-| `load_subjects_all` / `load_subjects`| Loads and parses the `Subj_list.csv` file.    | To Do (in `pywhifun.utils.io`)             |
-| `write_error`                        | Writes exception info to a log file.          | To Do (in `pywhifun.utils.logging`)        |
-| `niftisave`                          | Saves a NIfTI file using a template.          | To Do (in `pywhifun.utils.io`)             |
+| `load_subjects_all` / `load_subjects`| Loads and parses the `Subj_list.csv` file.    | Done (`load_subjects_from_csv`)            |
+| `write_error`                        | Writes exception info to a log file.          | Done (`pywhifun.utils.logging`)            |
+| `niftisave`                          | Saves a NIfTI file using a template.          | To Do (Blocked by nibabel issue)           |
 | `whifun_realignment`                 | SPM wrapper for motion correction.            | To Do (map to `nilearn.image`)             |
 | `whifun_segment`                     | SPM wrapper for tissue segmentation.          | To Do (map to `nilearn.image`)             |
 | `whifun_skullstrip`                  | Creates a brain mask from segmented tissues.  | To Do (in `pywhifun.preprocessing.masking`)|
@@ -23,7 +23,7 @@ This document tracks the conversion status of all functions called by the main `
 | `spm_check_registration_evalc`       | SPM function for QC plot generation.          | To Do (map to `nilearn.plotting`)          |
 | `whifun_segment_qc`                  | Generates QC plots for segmentation.          | To Do (in `pywhifun.visualization.qc`)     |
 | `whifun_ts_check`                    | Generates QC plots for time series.           | To Do (in `pywhifun.visualization.qc`)     |
-| `my_writetable`                      | Saves a struct as a CSV file.                 | To Do (use `pandas.DataFrame.to_csv`)      |
+| `my_writetable`                      | Saves a struct as a CSV file.                 | Done (`write_list_of_dicts_to_csv`)        |
 
 ## Other Converted Utility Functions
 
@@ -32,7 +32,9 @@ This document tracks the conversion status of all functions called by the main `
 | `complete_filepath.m`   | Resolves file paths with wildcards.         | Done (`pywhifun.utils.path_utils`)        |
 | `corrvec.m`             | Vectorizes a correlation matrix.            | Done (`pywhifun.utils.array_utils`)       |
 | `dice_iou.m`            | Calculates Dice and IoU metrics.            | Done (`pywhifun.core.metrics`)            |
-| `fd_calc.m`             | Calculates Framewise Displacement (L2 norm).| Done (`pywhifun.preprocessing.motion`)    |
+| `fd_calc.m`             | Calculates Framewise Displacement (L2 norm).| Done (`calculate_fd`)                     |
+| FD from script          | Calculates FD using sum of differences.     | Done (`calculate_fd_sum`)                 |
+| Unzip logic             | Decompresses .nii.gz files.                 | Done (`unzip_nifti_if_needed`)            |
 | `fdr_bh.m`              | Performs FDR correction.                    | Done (`pywhifun.core.stats`)              |
 | `fisherZ.m`             | Performs Fisher Z-transform.                | Done (`pywhifun.core.stats`)              |
 | `functional_connectivity.m` | Calculates FC matrix from time series.      | Partial (`calculate_static_fc` is Done)   |

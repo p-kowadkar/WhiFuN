@@ -2,7 +2,8 @@ import sys
 from PyQt6.QtCore import QThread, QObject, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QGroupBox, QLabel, QLineEdit, QPushButton, QCheckBox, QTextEdit, QFileDialog
+    QGroupBox, QLabel, QLineEdit, QPushButton, QCheckBox, QTextEdit, QFileDialog,
+    QProgressBar
 )
 from .subject_details_dialog import SubjectDetailsDialog
 from pywhifun.preprocessing.pipeline import run_preprocessing_pipeline
@@ -13,7 +14,8 @@ class PipelineWorker(QObject):
     A worker object for running the preprocessing pipeline in a separate thread.
     """
     finished = pyqtSignal()
-    progress = pyqtSignal(str)
+    progress_log = pyqtSignal(str)  # For text updates
+    progress_value = pyqtSignal(int) # For progress bar value
 
     def __init__(self, params):
         super().__init__()
@@ -22,16 +24,15 @@ class PipelineWorker(QObject):
     def run(self):
         """Runs the long-running task."""
         try:
-            self.progress.emit("--- Starting PyWhiFuN Preprocessing Pipeline (STUBBED) ---")
-            # For now, use dummy paths and params from the GUI
+            self.progress_log.emit("--- Starting PyWhiFuN Preprocessing Pipeline ---")
             run_preprocessing_pipeline(
                 output_folder=self.params.get("output_folder", "/tmp/pywhifun_output"),
                 subject_list_csv="Subj_list.csv",
-                params=self.params
+                params=self.params,
+                progress_callback=self.progress_value.emit
             )
-            self.progress.emit("--- PyWhiFuN Preprocessing Pipeline Finished ---")
         except Exception as e:
-            self.progress.emit(f"PIPELINE CRITICAL ERROR: {e}")
+            self.progress_log.emit(f"PIPELINE CRITICAL ERROR: {e}")
         finally:
             self.finished.emit()
 
@@ -60,6 +61,7 @@ class MainWindow(QMainWindow):
         self._create_data_config_group()
         self._create_preprocessing_group()
         self._create_network_construction_group()
+        self._create_status_bar()
         self._create_log_area()
 
         self.main_layout.addStretch()
@@ -157,11 +159,15 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.progress.connect(self._log) # Log progress from the pipeline to the GUI
+        self.worker.progress_log.connect(self._log) # Log text updates
+        self.worker.progress_value.connect(self.progress_bar.setValue) # Update progress bar
 
-        # Re-enable button when the thread is finished
+        # Re-enable button and reset progress bar when the thread is finished
         self.thread.finished.connect(
             lambda: self.run_preprocessing_button.setEnabled(True)
+        )
+        self.thread.finished.connect(
+            lambda: self.progress_bar.setValue(0)
         )
         self.thread.finished.connect(
             lambda: self._log("Pipeline thread has finished.")
@@ -271,6 +277,15 @@ class MainWindow(QMainWindow):
 
         group_box.setLayout(layout)
         self.main_layout.addWidget(group_box)
+
+    def _create_status_bar(self):
+        """Creates the progress bar widget."""
+        # This could be a group box or just the widget itself
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, 100)
+        self.main_layout.addWidget(self.progress_bar)
 
     def _create_log_area(self):
         """Creates the 'Log' text area."""

@@ -71,7 +71,7 @@ def _normalize_stub(func_path, anat_path, params):
 
 # --- Main Pipeline Function ---
 
-def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params: dict):
+def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params: dict, progress_callback=None):
     """
     Runs the full (stubbed) fMRI preprocessing pipeline.
 
@@ -82,6 +82,8 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
         output_folder (str): Path to the main output directory.
         subject_list_csv (str): Name of the CSV file containing subject info.
         params (dict): A dictionary of preprocessing parameters.
+        progress_callback (callable, optional): A function to call with
+                                                progress updates (0-100).
     """
     logging.info("--- Starting PyWhiFuN Preprocessing Pipeline ---")
 
@@ -101,12 +103,14 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
 
     logging.info(f"Found {len(subjects_to_process)} valid subjects to process out of {len(all_subjects)} total.")
 
-    for i, subject in enumerate(all_subjects):
-        # Skip subjects that are already marked for exclusion
-        if subject not in subjects_to_process:
-            continue
+    num_subjects = len(subjects_to_process)
+    for i, subject in enumerate(subjects_to_process):
+        # Update progress at the start of each subject loop
+        if progress_callback:
+            progress = int((i / num_subjects) * 100)
+            progress_callback(progress)
 
-        logging.info(f"--- Processing Subject: {subject['name']} ---")
+        logging.info(f"--- Processing Subject: {subject['name']} ({i+1}/{num_subjects}) ---")
         try:
             # --- Step 2: Unzip Files (REAL IMPLEMENTATION) ---
             # This logic is simple enough to live here for now.
@@ -167,5 +171,8 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
     logging.info("--- PyWhiFuN Preprocessing Pipeline Finished ---")
     logging.info("Saving updated subject list to CSV.")
     write_list_of_dicts_to_csv(all_subjects, subject_csv_path)
+
+    if progress_callback:
+        progress_callback(100) # Signal completion
 
     return True
