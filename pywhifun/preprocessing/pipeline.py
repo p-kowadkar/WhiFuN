@@ -1,7 +1,12 @@
 import os
 import logging
+import numpy as np
 
-# Configure basic logging
+from pywhifun.utils.io import load_subjects_from_csv, write_list_of_dicts_to_csv, unzip_nifti_if_needed
+from pywhifun.utils.logging import setup_file_logger, log_error_to_file
+from pywhifun.preprocessing.motion import calculate_fd_sum
+
+# Configure basic logging for console output
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # This file will contain the high-level logic for the preprocessing pipeline.
@@ -10,18 +15,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # --- Stub Functions ---
 # These will eventually be replaced by calls to the real, converted functions
 # from other modules (e.g., pywhifun.preprocessing.motion).
-
-def _load_subjects_stub(output_folder, csv_name):
-    logging.info(f"PIPELINE STUB: Loading subjects from {os.path.join(output_folder, csv_name)}")
-    # Return a mock subject list (e.g., a list of dictionaries)
-    mock_subject = {'name': 'sub-01', 'error': 0, 'motion_ex': 0}
-    logging.info(f"PIPELINE STUB: Found 1 mock subject: {mock_subject['name']}")
-    return [mock_subject]
-
-def _unzip_files_stub(subject):
-    logging.info(f"PIPELINE STUB: Checking/Unzipping files for {subject['name']}")
-    # Return mock paths to the unzipped files
-    return "/path/to/func.nii", "/path/to/anat.nii"
 
 def _discard_volumes_stub(func_path, n_vols):
     if n_vols > 0:
@@ -39,12 +32,6 @@ def _realign_stub(func_path):
     logging.info(f"PIPELINE STUB: --> Would create {realigned_path} and {motion_params_path}")
     return realigned_path, motion_params_path
 
-def _fd_check_stub(motion_params_path, subject, params):
-    logging.info(f"PIPELINE STUB: Calculating FD for {subject['name']} and checking against thresholds.")
-    # In reality, this would load the motion_params_path file
-    is_excluded = False # Assume subject passes QC
-    logging.info(f"PIPELINE STUB: --> Subject passes motion QC: not excluded.")
-    return is_excluded
 
 def _segment_stub(anat_path):
     logging.info(f"PIPELINE STUB: Segmenting {anat_path} into tissue types.")
@@ -96,30 +83,63 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
         subject_list_csv (str): Name of the CSV file containing subject info.
         params (dict): A dictionary of preprocessing parameters.
     """
-    logging.info("--- Starting PyWhiFuN Preprocessing Pipeline (STUBBED) ---")
-    logging.info(f"Output Folder: {output_folder}")
-    logging.info(f"Parameters: {params}")
+    logging.info("--- Starting PyWhiFuN Preprocessing Pipeline ---")
 
-    subjects = _load_subjects_stub(output_folder, subject_list_csv)
+    # --- Setup: Error Logging and Parameters ---
+    error_log_path = os.path.join(output_folder, 'pywhifun_error_log.txt')
+    error_logger = setup_file_logger('error_logger', error_log_path)
+    logging.info(f"Error log will be saved to: {error_log_path}")
 
-    for subject in subjects:
+    # --- Step 1: Load Subjects (REAL IMPLEMENTATION) ---
+    subject_csv_path = os.path.join(output_folder, subject_list_csv)
+    all_subjects = load_subjects_from_csv(subject_csv_path, filter_subjects=False)
+    subjects_to_process = [s for s in all_subjects if not s.get('error') and not s.get('motion_ex') and not s.get('manual_ex')]
+
+    if not subjects_to_process:
+        logging.error(f"No valid subjects found in {subject_csv_path} or file not found. Aborting pipeline.")
+        return False
+
+    logging.info(f"Found {len(subjects_to_process)} valid subjects to process out of {len(all_subjects)} total.")
+
+    for i, subject in enumerate(all_subjects):
+        # Skip subjects that are already marked for exclusion
+        if subject not in subjects_to_process:
+            continue
+
         logging.info(f"--- Processing Subject: {subject['name']} ---")
         try:
-            func_file, anat_file = _unzip_files_stub(subject)
+            # --- Step 2: Unzip Files (REAL IMPLEMENTATION) ---
+            # This logic is simple enough to live here for now.
+            # In MATLAB, this is mixed with finding the file. We assume paths are correct.
+            logging.info("PIPELINE: Checking/Unzipping files...")
+            subject['func_file'] = unzip_nifti_if_needed(subject['func_file_path'])
+            subject['anat_file'] = unzip_nifti_if_needed(subject['anat_file_path'])
 
-            trimmed_file = _discard_volumes_stub(func_file, params.get('n_vol_dis', 0))
+            # --- Step 3: Discard Initial Volumes ---
+            trimmed_file = _discard_volumes_stub(subject['func_file'], params.get('n_vol_dis', 0))
 
-            realigned_file, motion_params = _realign_stub(trimmed_file)
+            # --- Step 4: Realignment ---
+            realigned_file, motion_params_path = _realign_stub(trimmed_file)
 
-            is_excluded = _fd_check_stub(motion_params, subject, params)
-            if is_excluded:
-                logging.warning(f"Skipping subject {subject['name']} due to excessive motion.")
+            # --- Step 5: Framewise Displacement Check (REAL IMPLEMENTATION) ---
+            logging.info("PIPELINE: Calculating FD and checking against thresholds.")
+            motion_params = np.loadtxt(motion_params_path) # In reality, we'd load the file
+            fd = calculate_fd_sum(motion_params)
+
+            if np.max(fd) > params.get('max_fd', 6):
+                logging.warning(f"Excluding subject {subject['name']} due to max FD > threshold.")
+                all_subjects[i]['motion_ex'] = 1
                 continue
+            # (Add other FD checks here: mean_fd, etc.)
 
-            c1_file, c2_file = _segment_stub(anat_file)
+            # --- Step 6: Segmentation ---
+            c1_file, c2_file = _segment_stub(subject['anat_file'])
 
-            skullstripped_anat = _skullstrip_stub(anat_file, [c1_file, c2_file])
 
+            # --- Step 7: Skull Stripping ---
+            skullstripped_anat = _skullstrip_stub(subject['anat_file'], [c1_file, c2_file])
+
+            # --- Step 8: Coregistration ---
             _coregister_stub(skullstripped_anat, realigned_file)
 
             # The order of the next steps depends on the parameters
@@ -133,13 +153,19 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
             if params.get('Smooth_', 1): # Default is to smooth
                 processed_file = _smooth_stub(processed_file, params)
 
-            final_file = _normalize_stub(processed_file, anat_file, params)
+            # --- Step 14: Normalization ---
+            final_file = _normalize_stub(processed_file, subject['anat_file'], params)
 
             logging.info(f"--- Subject {subject['name']} processed successfully. Final file: {final_file} ---")
 
         except Exception as e:
-            logging.error(f"PIPELINE ERROR: Failed to process subject {subject['name']}. Reason: {e}", exc_info=True)
-            # In the future, this will call a real error logging function.
+            logging.error(f"PIPELINE ERROR: Failed to process subject {subject['name']}.")
+            log_error_to_file(error_logger, subject['name'], e)
+            all_subjects[i]['error'] = 1
 
+    # --- Final Step: Save Updated Subject List (REAL IMPLEMENTATION) ---
     logging.info("--- PyWhiFuN Preprocessing Pipeline Finished ---")
+    logging.info("Saving updated subject list to CSV.")
+    write_list_of_dicts_to_csv(all_subjects, subject_csv_path)
+
     return True

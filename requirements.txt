@@ -11,3 +11,4 @@ joblib
 pytest
 sphinx
 statsmodels
+pandas

@@ -41,3 +41,31 @@ def test_calculate_fd_no_motion():
     expected_fd = np.array([0.0, 0.0])
     actual_fd = calculate_fd(motion_params)
     assert_allclose(actual_fd, expected_fd)
+
+
+# --- Tests for calculate_fd_sum ---
+
+from pywhifun.preprocessing.motion import calculate_fd_sum
+
+def test_calculate_fd_sum_basic():
+    """Tests the sum-based FD calculation with a simple, known input."""
+    motion_params = np.array([
+        [0, 0, 0, 0, 0, 0],
+        [1, -1, 0.5, 0.01, -0.01, 0],
+        [2, -1, 0.5, 0.01, -0.01, 0.02]
+    ])
+
+    # Expected FD:
+    # t1: (1-0) + (-1-0) + (0.5-0) = 0.5. Rot diff is 0. FD = 0.5
+    # t2: (2-1) + (-1-(-1)) + (0.5-0.5) = 1. Rot diff is 0.02. Scaled rot diff = 1. FD = 1+1=2.0
+    expected_fd = np.array([0.5, 2.0])
+
+    actual_fd = calculate_fd_sum(motion_params)
+
+    assert actual_fd.shape == (2,)
+    assert_allclose(actual_fd, expected_fd)
+
+def test_calculate_fd_sum_invalid_input():
+    """Tests that a ValueError is raised for inputs with incorrect dimensions."""
+    with pytest.raises(ValueError, match="shape \\(n_timepoints, 6\\)"):
+        calculate_fd_sum(np.zeros((10, 5))) # wrong number of columns
