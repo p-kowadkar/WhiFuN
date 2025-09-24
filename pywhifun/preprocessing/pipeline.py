@@ -6,6 +6,8 @@ from pywhifun.utils.io import load_subjects_from_csv, write_list_of_dicts_to_csv
 from pywhifun.utils.logging import setup_file_logger, log_error_to_file
 from pywhifun.preprocessing.motion import calculate_fd_sum, realign_image_stub
 from pywhifun.preprocessing.segmentation import segment_image_stub
+from pywhifun.preprocessing.masking import skullstrip_image
+from pywhifun.preprocessing.registration import coregister_image_stub
 
 # Configure basic logging for console output
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,13 +31,7 @@ def _discard_volumes_stub(func_path, n_vols):
 
 
 
-def _skullstrip_stub(anat_path, segmentation_files):
-    logging.info(f"PIPELINE STUB: Skull-stripping {anat_path}")
-    return "/path/to/brain_anat.nii"
 
-def _coregister_stub(anat_path, func_path):
-    logging.info(f"PIPELINE STUB: Coregistering {anat_path} to {func_path}")
-    return True # Success
 
 def _regression_stub(func_path, anat_path, params):
     logging.info(f"PIPELINE STUB: Performing nuisance signal regression on {func_path}")
@@ -138,11 +134,27 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
             c1_file = segmentation_files['gm']
             c2_file = segmentation_files['wm']
 
-            # --- Step 7: Skull Stripping ---
-            skullstripped_anat = _skullstrip_stub(subject['anat_file'], [c1_file, c2_file])
+            # --- Step 7: Skull Stripping (REAL IMPLEMENTATION) ---
+            logging.info("PIPELINE: Creating skull-stripped anatomical image.")
+            skullstripped_anat_path = os.path.join(
+                os.path.dirname(subject['anat_file']),
+                f"b{os.path.basename(subject['anat_file'])}"
+            )
+            success = skullstrip_image(
+                anat_path=subject['anat_file'], # This should be the bias-corrected one eventually
+                gm_path=segmentation_files['gm'],
+                wm_path=segmentation_files['wm'],
+                csf_path=segmentation_files['csf'],
+                output_path=skullstripped_anat_path
+            )
+            if not success:
+                raise RuntimeError("Skull-stripping failed.")
 
-            # --- Step 8: Coregistration ---
-            _coregister_stub(skullstripped_anat, realigned_file)
+            # --- Step 8: Coregistration (STUB IMPLEMENTATION) ---
+            coregister_image_stub(
+                reference_path=skullstripped_anat_path,
+                source_path=realigned_file # Technically the mean functional
+            )
 
             # The order of the next steps depends on the parameters
             processed_file = realigned_file

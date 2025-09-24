@@ -67,3 +67,33 @@ To allow pipeline development to continue, I have implemented a **placeholder st
 - Creates dummy output files that are expected by downstream steps. This includes empty NIfTI files for the tissue maps (`c1*`, `c2*`, `c3*`) and the deformation field (`y_*`).
 
 **Requested Action:** Please advise on the preferred long-term strategy for tissue segmentation. I will proceed with the placeholder stub for now.
+
+---
+
+## 3. Coregistration
+
+- **Date**: 2025-09-24
+- **MATLAB Function**: `whifun_coreg.m`
+- **Core Dependency**: SPM12 (`spm.spatial.coreg.estimate`)
+
+### Description
+The `whifun_coreg.m` function is a wrapper for SPM12's coregistration module. It *estimates* the affine transformation required to align a source image (mean fMRI) to a reference image (anatomical T1w). It then applies this transformation by modifying the headers of the fMRI time series in-place.
+
+### The Block
+This is the third major preprocessing step (after realignment and segmentation) that does not have a direct, pure-Python equivalent in the `nilearn` library. `nilearn` can apply known transformations but lacks a high-level function to *estimate* the optimal registration between two images with different modalities (e.g., T1w and EPI). This estimation is a complex optimization problem that is handled by dedicated external tools.
+
+### Potential Solutions (Requiring User Decision)
+
+1.  **Use `nipype` Wrapper**: Call SPM's coregistration via `nipype`. This would provide perfect functional equivalence.
+    -   **Con**: Requires a full SPM12 installation in the execution environment.
+2.  **Use other Python Registration Libraries**: Libraries like `ANTsPy`, `SimpleITK`, or `DiPy` have powerful registration algorithms.
+    -   **Pro**: A pure Python solution would be possible.
+    -   **Con**: The results would differ from SPM's, requiring re-validation. These are also heavy dependencies.
+
+### Proposed Temporary Solution (Implemented)
+
+To allow pipeline development to continue, I will implement a **placeholder stub** for the `coregister_image` function. This stub:
+- Logs a prominent `WARNING` that coregistration is not being performed.
+- Returns `True` to signal success, allowing the pipeline to proceed, but does not modify any files.
+
+**Requested Action:** Please advise on the preferred long-term strategy for coregistration. I will proceed with the placeholder stub for now.
