@@ -58,3 +58,47 @@ def test_skullstrip_image(tissue_map_files):
     expected_data = np.array([[[1, 0], [0, 0]], [[0, 0], [0, 8]]], dtype=np.int16)
 
     assert_allclose(skullstripped_data, expected_data)
+
+
+# --- Tests for create_csf_mask ---
+
+from pywhifun.preprocessing.masking import create_csf_mask
+
+def test_create_csf_mask(tmp_path):
+    """Tests the creation of a binary CSF mask from a probability map."""
+    # 1. Create a dummy CSF probability map
+    csf_tpm_path = tmp_path / "csf_tpm.nii"
+    csf_data = np.array([
+        [0.1, 0.98],
+        [0.8, 0.4]
+    ], dtype=np.float32)
+    affine = np.eye(4)
+    nib.save(nib.Nifti1Image(csf_data, affine), csf_tpm_path)
+
+    # 2. Create a dummy reference image (can be the same for this test)
+    ref_path = csf_tpm_path
+
+    # 3. Define output and call function
+    output_path = tmp_path / "csf_mask.nii"
+    threshold = 0.9
+
+    success = create_csf_mask(
+        csf_tpm_path=str(csf_tpm_path),
+        ref_img_path=str(ref_path),
+        output_path=str(output_path),
+        threshold=threshold
+    )
+
+    assert success is True
+    assert output_path.exists()
+
+    # 4. Load the output mask and verify its contents
+    mask_img = nib.load(output_path)
+    mask_data = mask_img.get_fdata()
+
+    expected_mask = np.array([
+        [0, 1],
+        [0, 0]
+    ], dtype=np.int16)
+
+    assert_allclose(mask_data, expected_mask)

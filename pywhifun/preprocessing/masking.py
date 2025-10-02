@@ -57,3 +57,47 @@ def skullstrip_image(
     except Exception as e:
         logging.error(f"Error during skull-stripping: {e}", exc_info=True)
         return False
+
+
+def create_csf_mask(
+    csf_tpm_path: str,
+    ref_img_path: str,
+    output_path: str,
+    threshold: float
+) -> bool:
+    """
+    Creates a binary CSF mask by thresholding a probability map.
+
+    This function replicates the logic of `whifun_create_csf_mask.m`.
+
+    Args:
+        csf_tpm_path (str): Path to the CSF tissue probability map (TPM).
+        ref_img_path (str): Path to a reference image (e.g., a functional image)
+                            to use for header and affine information.
+        output_path (str): Path to save the output binary mask NIfTI file.
+        threshold (float): Probability threshold to apply to the TPM.
+
+    Returns:
+        bool: True if the operation was successful, False otherwise.
+    """
+    try:
+        logging.info(f"Loading CSF TPM: {csf_tpm_path}")
+        csf_img = nib.load(csf_tpm_path)
+        csf_data = csf_img.get_fdata()
+
+        logging.info(f"Loading reference image for geometry: {ref_img_path}")
+        ref_img = nib.load(ref_img_path)
+
+        logging.info(f"Thresholding CSF map at > {threshold}")
+        # Create binary mask and ensure it has an integer type
+        csf_mask = (csf_data > threshold).astype(np.int16)
+
+        # Save the new mask using the reference image as a template
+        logging.info(f"Saving CSF mask to: {output_path}")
+        save_nifti(csf_mask, output_path, ref_img)
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Error during CSF mask creation: {e}", exc_info=True)
+        return False
