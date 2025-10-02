@@ -70,3 +70,57 @@ def fdr_bh(pvals: ArrayLike, q: float = 0.05, method: str = 'pdep') -> Tuple[np.
     crit_p = np.max(pvals_significant) if pvals_significant.size > 0 else 0.0
 
     return h, crit_p, adj_p
+
+
+def calculate_idiff(vec1: ArrayLike, vec2: ArrayLike) -> Tuple[float, np.ndarray, float, float]:
+    """
+    Calculates the "identification differential" (idiff) score.
+
+    This score measures how uniquely identifiable subjects are based on their
+    functional connectivity (FC) patterns across two sessions. It is the
+    difference between the average self-similarity and the average
+    cross-subject similarity.
+
+    This function replicates the primary (non-PCA) logic of `idiff.m`.
+
+    Args:
+        vec1 (ArrayLike): An array of shape (n_features, n_subjects) containing
+                          the vectorized FC for each subject in session 1.
+        vec2 (ArrayLike): An array of shape (n_features, n_subjects) containing
+                          the vectorized FC for each subject in session 2.
+
+    Returns:
+        A tuple containing:
+        - idiff_score (float): The final identifiability score.
+        - corr_matrix (np.ndarray): The subject-by-subject correlation matrix.
+        - iself (float): The mean self-correlation across sessions.
+        - iothers (float): The mean cross-subject correlation.
+    """
+    vec1 = np.asarray(vec1)
+    vec2 = np.asarray(vec2)
+
+    if vec1.shape != vec2.shape:
+        raise ValueError("Input vectors vec1 and vec2 must have the same shape.")
+
+    # Correlate each column of vec1 with each column of vec2
+    # This is not a simple matrix multiplication. We need to do it column by column.
+    n_subjects = vec1.shape[1]
+    corr_matrix = np.zeros((n_subjects, n_subjects))
+    for i in range(n_subjects):
+        for j in range(n_subjects):
+            # Correlation between subject i from session 1 and subject j from session 2
+            corr_matrix[i, j] = np.corrcoef(vec1[:, i], vec2[:, j])[0, 1]
+
+    # Calculate Iself: mean of the diagonal of the absolute correlation matrix
+    iself = np.mean(np.abs(np.diag(corr_matrix)))
+
+    # Calculate Iothers: mean of the off-diagonal elements
+    # Create a copy to avoid modifying the original, fill diagonal with NaN
+    temp_matrix = np.abs(corr_matrix.copy())
+    np.fill_diagonal(temp_matrix, np.nan)
+    iothers = np.nanmean(temp_matrix)
+
+    # Calculate idiff score
+    idiff_score = (iself - iothers) * 100
+
+    return idiff_score, corr_matrix, iself, iothers

@@ -83,6 +83,22 @@ def calculate_fd_sum(motion_params: ArrayLike, rot_radius: float = 50.0) -> np.n
     return fd
 
 
+def fd_check_stub(motion_params_path: str, subject: dict, params: dict) -> bool:
+    """
+    A placeholder stub for the Framewise Displacement check.
+
+    Args:
+        motion_params_path (str): Path to the motion parameter file.
+        subject (dict): The subject dictionary.
+        params (dict): Dictionary of parameters.
+
+    Returns:
+        bool: False, indicating the subject is not excluded.
+    """
+    logging.info(f"PIPELINE STUB: Calculating FD for {subject['name']} and checking thresholds.")
+    return False # Assume subject passes QC
+
+
 def realign_image_stub(nifti_path: str, output_prefix: str = 'r') -> (str, str):
     """
     A placeholder stub for the realignment (motion correction) step.

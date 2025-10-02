@@ -8,7 +8,8 @@ from pywhifun.utils.io import load_subjects_from_csv, write_list_of_dicts_to_csv
 from pywhifun.utils.logging import setup_file_logger, log_error_to_file
 
 # Stubs for blocked/unimplemented steps
-from pywhifun.preprocessing.motion import realign_image_stub
+from pywhifun.preprocessing.motion import realign_image_stub, fd_check_stub
+from pywhifun.preprocessing.masking import skullstrip_stub, create_csf_mask_stub
 from pywhifun.preprocessing.segmentation import segment_image_stub
 from pywhifun.preprocessing.registration import coregister_image_stub
 from pywhifun.preprocessing.regression import nuisance_regression_stub
@@ -18,20 +19,6 @@ from pywhifun.preprocessing.normalization import normalize_image_stub
 
 # Configure basic logging for console output
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-# --- Local Stubs for steps whose dependencies are not ready ---
-def _fd_check_stub(motion_params_path, subject, params):
-    logging.info(f"PIPELINE STUB: Calculating FD for {subject['name']} and checking thresholds.")
-    return False # Assume subject passes QC
-
-def _skullstrip_stub(anat_path, segmentation_files):
-    logging.info(f"PIPELINE STUB: Skull-stripping {anat_path}")
-    return "/path/to/brain_anat.nii"
-
-def _create_csf_mask_stub(anat_path, segmentation_files, params):
-    logging.info(f"PIPELINE STUB: Creating CSF mask for {anat_path}")
-    return "/path/to/csf_mask.nii"
 
 
 def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params: dict, progress_callback=None):
@@ -73,20 +60,20 @@ def run_preprocessing_pipeline(output_folder: str, subject_list_csv: str, params
             # --- The Pipeline ---
             realigned_file, motion_params_path = realign_image_stub(subject['func_file'], params.get('Realign_pre', 'r'))
 
-            is_excluded = _fd_check_stub(motion_params_path, subject, params)
+            is_excluded = fd_check_stub(motion_params_path, subject, params)
             if is_excluded:
                 all_subjects[subject_index_in_full_list]['motion_ex'] = 1
                 continue
 
             segmentation_files = segment_image_stub(subject['anat_file'])
 
-            skullstripped_anat_path = _skullstrip_stub(subject['anat_file'], segmentation_files)
+            skullstripped_anat_path = skullstrip_stub(subject['anat_file'], segmentation_files)
 
             coregister_image_stub(skullstripped_anat_path, realigned_file)
 
             processed_file = realigned_file
             if params.get('Reg_', 1):
-                csf_mask_path = _create_csf_mask_stub(subject['anat_file'], segmentation_files, params)
+                csf_mask_path = create_csf_mask_stub(subject['anat_file'], segmentation_files, params)
                 processed_file = nuisance_regression_stub(processed_file, skullstripped_anat_path, params)
 
             if params.get('filter_check', 0):

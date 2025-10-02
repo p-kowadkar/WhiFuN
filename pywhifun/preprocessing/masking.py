@@ -101,3 +101,34 @@ def create_csf_mask(
     except Exception as e:
         logging.error(f"Error during CSF mask creation: {e}", exc_info=True)
         return False
+
+
+def skullstrip_stub(anat_path: str, segmentation_files: list) -> str:
+    """
+    A placeholder stub for the skull-stripping step.
+
+    Args:
+        anat_path (str): Path to the anatomical image.
+        segmentation_files (list): List of segmentation file paths.
+
+    Returns:
+        str: Path to the dummy output file.
+    """
+    logging.info(f"PIPELINE STUB: Skull-stripping {anat_path}")
+    return "/path/to/brain_anat.nii"
+
+
+def create_csf_mask_stub(anat_path: str, segmentation_files: dict, params: dict) -> str:
+    """
+    A placeholder stub for the CSF mask creation step.
+
+    Args:
+        anat_path (str): Path to the anatomical image.
+        segmentation_files (dict): Dictionary of segmentation file paths.
+        params (dict): Dictionary of parameters.
+
+    Returns:
+        str: Path to the dummy output file.
+    """
+    logging.info(f"PIPELINE STUB: Creating CSF mask for {anat_path}")
+    return "/path/to/csf_mask.nii"
