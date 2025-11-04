@@ -1,9 +1,6 @@
 %% EXAMPLE_USAGE - Demonstrates how to use the testing scripts
 %
 %   This script shows examples of how to use each testing utility.
-%
-%   Author: GitHub Copilot
-%   Date: November 4, 2025
 
 %% Example 1: Quick Test
 % Use this for a fast sanity check

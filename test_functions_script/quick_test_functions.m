@@ -10,9 +10,6 @@
 %
 %   Usage:
 %       quick_test_functions
-%
-%   Author: GitHub Copilot
-%   Date: November 4, 2025
 
 clc; clear; close all;
 

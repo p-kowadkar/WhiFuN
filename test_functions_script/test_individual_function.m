@@ -11,9 +11,6 @@ function test_individual_function(function_name)
 %   Usage:
 %       test_individual_function('whifun_preproc')
 %       test_individual_function('whifun_create_FN_Kmeans')
-%
-%   Author: GitHub Copilot
-%   Date: November 4, 2025
 
 if nargin < 1
     error('Please provide a function name to test');

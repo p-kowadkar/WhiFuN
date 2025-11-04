@@ -1,9 +1,6 @@
 %% START_TESTING - Quick launcher for WhiFuN function tests
 %
 %   This script provides an interactive menu to launch different tests.
-%
-%   Author: GitHub Copilot
-%   Date: November 4, 2025
 
 clc; clear; close all;
 
