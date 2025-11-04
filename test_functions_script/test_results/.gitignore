@@ -6,6 +6,9 @@ test_log_*.txt
 test_results_*.mat
 function_catalog_*.txt
 
+# Test data directory (downloaded from Google Drive)
+../temp_test_data/
+
 # MATLAB autosave files
 *.asv
 

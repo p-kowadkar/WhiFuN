@@ -14,11 +14,12 @@ while true
     fprintf('  2. Comprehensive Test (2-5 minutes)\n');
     fprintf('  3. Test Individual Function\n');
     fprintf('  4. Generate Function Catalog\n');
-    fprintf('  5. Run All Tests\n');
-    fprintf('  6. View Examples\n');
+    fprintf('  5. Test with Google Drive Data\n');
+    fprintf('  6. Run All Tests\n');
+    fprintf('  7. View Examples\n');
     fprintf('  0. Exit\n\n');
     
-    choice = input('Select option (0-6): ', 's');
+    choice = input('Select option (0-7): ', 's');
     
     fprintf('\n');
     
@@ -49,11 +50,16 @@ while true
             generate_function_catalog;
             
         case '5'
+            fprintf('Testing with Google Drive Data...\n');
+            fprintf('--------------------------------------------------------------------\n');
+            test_with_google_drive_data;
+            
+        case '6'
             fprintf('Running All Tests...\n');
             fprintf('--------------------------------------------------------------------\n');
             run_all_tests;
             
-        case '6'
+        case '7'
             fprintf('Opening example_usage.m...\n');
             edit example_usage.m;
             
@@ -62,7 +68,7 @@ while true
             break;
             
         otherwise
-            fprintf('Invalid choice. Please select 0-6.\n');
+            fprintf('Invalid choice. Please select 0-7.\n');
     end
     
     if ~strcmp(choice, '0')

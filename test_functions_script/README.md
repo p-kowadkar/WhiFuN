@@ -79,6 +79,42 @@ quick_test_functions
 
 ---
 
+### 4. `test_with_google_drive_data.m`
+**Test functions with real practice data**
+
+Tests WhiFuN functions using the practice dataset from Google Drive.
+Provides options for:
+- Manual data download instructions
+- Synthetic test data generation
+- Real function testing with actual neuroimaging data
+
+**Usage:**
+```matlab
+cd test_functions_script
+test_with_google_drive_data              % Full test with data
+test_with_google_drive_data('download_only')   % Setup only
+test_with_google_drive_data('test_functions')  % Test with existing data
+```
+
+**Requirements:**
+- Internet connection (for data download)
+- SPM12 (optional, for synthetic data generation)
+- Practice data from: https://drive.google.com/drive/folders/1l7dhG8dYYRCW5EWhkPZbBpA7TOau1W-B
+
+**What it tests:**
+- File location functions (`whifun_check_func_file`, `whifun_check_anat_file`)
+- Path construction utilities
+- NIfTI reading capabilities
+- Data structure validation
+
+**Output:**
+- Test results to console
+- Test data cached in `temp_test_data/` folder
+
+**Time:** Variable (depends on data download)
+
+---
+
 ## Typical Workflow
 
 1. **First run:** Use `quick_test_functions` to get a quick overview
