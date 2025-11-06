@@ -45,7 +45,7 @@ setup(
     entry_points={
         "console_scripts": [
             "pywhifun=pywhifun.cli:main",
-            "pywhifun-gui=pywhifun.gui:main",
+            "whifun-python=pywhifun.cli:main",
         ],
     },
     include_package_data=True,

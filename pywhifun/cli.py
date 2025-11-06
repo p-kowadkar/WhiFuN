@@ -184,6 +184,22 @@ def preprocess(subject_config, qc_path, overwrite, n_vol_dis, max_fd, mean_fd,
 
 
 @main.command()
+def gui():
+    """Launch the PyWhiFuN GUI interface."""
+    try:
+        from .gui.main_window import launch_gui
+        click.echo("Launching PyWhiFuN GUI...")
+        launch_gui()
+    except ImportError as e:
+        click.echo(f"Error: GUI dependencies not available: {str(e)}", err=True)
+        click.echo("Please install GUI dependencies: pip install tkinter", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Error launching GUI: {str(e)}", err=True)
+        sys.exit(1)
+
+
+@main.command()
 def create_subject_config():
     """Create a template subject configuration file."""
     config = {
